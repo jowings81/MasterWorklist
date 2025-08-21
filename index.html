@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dell Master Worklist – Vanilla Demo</title>
+  <title>Dell Master Worklist – Fix</title>
   <style>
     :root{ --dellblue:#007DB8; --bg:#f6f7fb; --card:#ffffff; --muted:#6b7280; --border:#e5e7eb; --shadow:0 4px 14px rgba(0,0,0,0.08); --radius:16px; }
     html, body { margin:0; padding:0; background:var(--bg); font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,'Noto Sans',sans-serif; color:#111827; }
@@ -40,14 +40,15 @@
     .expand:hover{ background:#f3f4f6; }
     .details{ border-top:1px solid var(--border); margin-top:12px; padding-top:12px; font-size:14px; color:#374151; }
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
-    .chip{ padding:4px 8px; border-radius:999px; font-size:12px; background:#E6F4FA; color:var(--dellblue); border:1px solid #BFE5F6; }
+    .chip{ padding:4px 8px; border-radius:999px; font-size:12px; background:#E6F4FA; color:#007DB8; border:1px solid #BFE5F6; }
+    .table{ background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-top:24px; }
     table{ width:100%; border-collapse:collapse; }
     th, td{ text-align:left; padding:10px 12px; }
     thead{ background:#f3f4f6; color:#374151; }
     tbody tr{ border-top:1px solid var(--border); }
-    .table{ background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-top:24px; }
     .actions{ display:flex; gap:8px; flex-wrap:wrap; }
     .copy{ border:1px solid var(--border); background:#fff; border-radius:10px; padding:8px 12px; cursor:pointer; }
+    .hidden{ display:none; }
   </style>
 </head>
 <body>
@@ -56,6 +57,7 @@
       <h1 class="title">Dell Master Worklist</h1>
       <p class="subtitle">Track projects and workstreams across business units</p>
     </header>
+
     <section class="controls">
       <div class="left">
         <div class="search">
@@ -106,8 +108,8 @@
       </div>
     </section>
 
-    <section id="intake" class="intake" style="display:none">
-      <h2 style="margin:0 0 12px; color:var(--dellblue); font-size:20px;">New Project Intake</h2>
+    <section id="intake" class="intake hidden">
+      <h2 style="margin:0 0 12px; color:#007DB8; font-size:20px;">New Project Intake</h2>
       <div class="grid">
         <input id="i-title" class="input" placeholder="Project Title"/>
         <input id="i-owner" class="input" placeholder="Owner(s)"/>
@@ -115,12 +117,8 @@
         <input id="i-unit" class="input" placeholder="Business Unit / Function"/>
         <input id="i-start" type="date" class="input" placeholder="Start Date"/>
         <input id="i-end" type="date" class="input" placeholder="End Date"/>
-        <select id="i-status" class="input">
-          <option>Planned</option><option>Active</option><option>Complete</option>
-        </select>
-        <select id="i-category" class="input">
-          <option>Training</option><option>Products</option><option>Services</option><option>Process</option><option>Innovation</option>
-        </select>
+        <select id="i-status" class="input"><option>Planned</option><option>Active</option><option>Complete</option></select>
+        <select id="i-category" class="input"><option>Training</option><option>Products</option><option>Services</option><option>Process</option><option>Innovation</option></select>
         <input id="i-tags" class="input" placeholder="Tags / Keywords"/>
         <input id="i-tools" class="input" placeholder="Related Tools or Systems"/>
         <textarea id="i-desc" class="text row2" placeholder="Short Description" rows="4"></textarea>
@@ -135,116 +133,120 @@
       </div>
     </section>
 
-    <section id="content"></section>
+    <section id="content">
+      <div class="cards" id="cards-prerender">
+        <!-- Pre-rendered cards for immediate content -->
+      </div>
+    </section>
   </div>
 
   <script>
-    const statusOrder = { Active:0, Planned:1, Complete:2 };
-    const state = {
-      search: '', fStatus:'All', fUnit:'All', fCat:'All', sort:'status', view:'grid', expanded:{},
-      projects: [
-        { title:'Unified Service Platform', owner:'Sarah Malik', ownerEmail:'sarah.malik@dell.com', unit:'Services', start:'02/01/2025', end:'12/01/2025', status:'Active', category:'Services', collaboration:false, collaborationNeeds:['SSO','APIs'], description:'Consolidate legacy service portals into a single, authenticated experience with entitlement-aware workflows and unified SLAs. Phase 1 focuses on migration and SSO.' },
-        { title:'AI-Powered Customer Support Tool', owner:'John Chen', ownerEmail:'john.chen@dell.com', unit:'Customer Support', start:'04/15/2025', end:'10/30/2025', status:'Planned', category:'Products', collaboration:true, collaborationNeeds:['Design','PMM','CRM'], description:'Develop an agent-assist copilot that summarizes tickets, recommends KB content, and drafts replies. Requires integrations with CRM, KB, and chat platforms.' },
-        { title:'New Product Launch Initiative', owner:'Priya Singh, Anil Rao', ownerEmail:'priya.singh@dell.com', unit:'Product Development', start:'01/01/2025', end:'06/15/2025', status:'Complete', category:'Process', collaboration:false, collaborationNeeds:['Legal','Finance'], description:'Cross-functional launch playbook (PMM, Sales, Support) with readiness scorecards and assets hub. Completed Phase 1 rollout and lessons learned.' },
-        { title:'Sales Pipeline Optimization', owner:'David Murphy', ownerEmail:'david.murphy@dell.com', unit:'Sales', start:'03/10/2025', end:'09/20/2025', status:'Active', category:'Training', collaboration:false, collaborationNeeds:['Analytics','Sales Ops'], description:'Revamp lead qualification and stage definitions; add enablement modules and manager coaching guides. Targeting +8% conversion lift.' },
-        { title:'Employee Training Portal Upgrade', owner:'Emily Carter', ownerEmail:'emily.carter@dell.com', unit:'HR', start:'05/01/2025', end:'11/01/2025', status:'Planned', category:'Training', collaboration:false, collaborationNeeds:['UX','Content'], description:'Migrate LMS to a modern UI with skill paths, microlearning, and SSO. Adds analytics for completions and proficiency.' },
-        { title:'Cloud Migration Initiative', owner:'Michael Lee', ownerEmail:'michael.lee@dell.com', unit:'IT', start:'02/15/2025', end:'08/15/2025', status:'Active', category:'Process', collaboration:false, collaborationNeeds:['SRE','Cost Governance'], description:'Lift-and-shift of tier-2 apps to cloud plus re-platforming of two data services. Emphasis on cost governance and reliability.' },
-        { title:'Customer Insights Dashboard', owner:'Sophia Patel', ownerEmail:'sophia.patel@dell.com', unit:'Analytics', start:'03/01/2025', end:'07/30/2025', status:'Planned', category:'Innovation', collaboration:false, collaborationNeeds:['Data Viz','Privacy'], description:'Self-serve analytics for NPS, churn risk, and product feedback. Combines survey, telemetry, and CRM data with governed access.' },
-        { title:'Partner Ecosystem Expansion', owner:'James Wong', ownerEmail:'james.wong@dell.com', unit:'Partnerships', start:'04/01/2025', end:'12/15/2025', status:'Active', category:'Services', collaboration:true, collaborationNeeds:['Legal','Finance','PMM'], description:'Recruit and onboard strategic partners; launch co-marketing kits and shared pipeline attribution. Needs legal, finance, and PMM alignment.' },
-        { title:'AI Training Program for Managers', owner:'Laura Green', ownerEmail:'laura.green@dell.com', unit:'Learning & Development', start:'06/01/2025', end:'09/01/2025', status:'Planned', category:'Training', collaboration:false, collaborationNeeds:['SMEs','Comms'], description:'Manager-focused curriculum covering prompt design, AI ethics, and workflow automation. Includes toolkits and job aids.' },
-        { title:'Cybersecurity Policy Overhaul', owner:'Robert Hill', ownerEmail:'robert.hill@dell.com', unit:'Security', start:'01/10/2025', end:'05/20/2025', status:'Complete', category:'Process', collaboration:false, collaborationNeeds:['Audit','Comms'], description:'Updated policies for zero trust, device posture, and vendor risk. Conducted tabletop exercises and remediation sprints.' }
-      ]
-    };
+  (function(){
+    var projects = [
+      { title:'Unified Service Platform', owner:'Sarah Malik', ownerEmail:'sarah.malik@dell.com', unit:'Services', start:'02/01/2025', end:'12/01/2025', status:'Active', category:'Services', collaboration:false, collaborationNeeds:['SSO','APIs'], description:'Consolidate legacy service portals into a single, authenticated experience with entitlement-aware workflows and unified SLAs. Phase 1 focuses on migration and SSO.' },
+      { title:'AI-Powered Customer Support Tool', owner:'John Chen', ownerEmail:'john.chen@dell.com', unit:'Customer Support', start:'04/15/2025', end:'10/30/2025', status:'Planned', category:'Products', collaboration:true, collaborationNeeds:['Design','PMM','CRM'], description:'Develop an agent-assist copilot that summarizes tickets, recommends KB content, and drafts replies. Requires integrations with CRM, KB, and chat platforms.' },
+      { title:'New Product Launch Initiative', owner:'Priya Singh, Anil Rao', ownerEmail:'priya.singh@dell.com', unit:'Product Development', start:'01/01/2025', end:'06/15/2025', status:'Complete', category:'Process', collaboration:false, collaborationNeeds:['Legal','Finance'], description:'Cross-functional launch playbook (PMM, Sales, Support) with readiness scorecards and assets hub. Completed Phase 1 rollout and lessons learned.' },
+      { title:'Sales Pipeline Optimization', owner:'David Murphy', ownerEmail:'david.murphy@dell.com', unit:'Sales', start:'03/10/2025', end:'09/20/2025', status:'Active', category:'Training', collaboration:false, collaborationNeeds:['Analytics','Sales Ops'], description:'Revamp lead qualification and stage definitions; add enablement modules and manager coaching guides. Targeting +8% conversion lift.' },
+      { title:'Employee Training Portal Upgrade', owner:'Emily Carter', ownerEmail:'emily.carter@dell.com', unit:'HR', start:'05/01/2025', end:'11/01/2025', status:'Planned', category:'Training', collaboration:false, collaborationNeeds:['UX','Content'], description:'Migrate LMS to a modern UI with skill paths, microlearning, and SSO. Adds analytics for completions and proficiency.' },
+      { title:'Cloud Migration Initiative', owner:'Michael Lee', ownerEmail:'michael.lee@dell.com', unit:'IT', start:'02/15/2025', end:'08/15/2025', status:'Active', category:'Process', collaboration:false, collaborationNeeds:['SRE','Cost Governance'], description:'Lift-and-shift of tier-2 apps to cloud plus re-platforming of two data services. Emphasis on cost governance and reliability.' },
+      { title:'Customer Insights Dashboard', owner:'Sophia Patel', ownerEmail:'sophia.patel@dell.com', unit:'Analytics', start:'03/01/2025', end:'07/30/2025', status:'Planned', category:'Innovation', collaboration:false, collaborationNeeds:['Data Viz','Privacy'], description:'Self-serve analytics for NPS, churn risk, and product feedback. Combines survey, telemetry, and CRM data with governed access.' },
+      { title:'Partner Ecosystem Expansion', owner:'James Wong', ownerEmail:'james.wong@dell.com', unit:'Partnerships', start:'04/01/2025', end:'12/15/2025', status:'Active', category:'Services', collaboration:true, collaborationNeeds:['Legal','Finance','PMM'], description:'Recruit and onboard strategic partners; launch co-marketing kits and shared pipeline attribution. Needs legal, finance, and PMM alignment.' },
+      { title:'AI Training Program for Managers', owner:'Laura Green', ownerEmail:'laura.green@dell.com', unit:'Learning & Development', start:'06/01/2025', end:'09/01/2025', status:'Planned', category:'Training', collaboration:false, collaborationNeeds:['SMEs','Comms'], description:'Manager-focused curriculum covering prompt design, AI ethics, and workflow automation. Includes toolkits and job aids.' },
+      { title:'Cybersecurity Policy Overhaul', owner:'Robert Hill', ownerEmail:'robert.hill@dell.com', unit:'Security', start:'01/10/2025', end:'05/20/2025', status:'Complete', category:'Process', collaboration:false, collaborationNeeds:['Audit','Comms'], description:'Updated policies for zero trust, device posture, and vendor risk. Conducted tabletop exercises and remediation sprints.' }
+    ];
 
-    const qs = s => document.querySelector(s);
-    const parseDate = (d) => {
+    var state = { search:'', fStatus:'All', fUnit:'All', fCat:'All', sort:'status', view:'grid', expanded:{}, projects: projects };
+
+    var qs = function(s){ return document.querySelector(s); };
+    var content = document.getElementById('content');
+    var intake = document.getElementById('intake');
+    var btnToggleIntake = document.getElementById('toggle-intake');
+
+    function parseDate(d){
       if(!d) return 0;
-      if(/^\\d{4}-\\d{2}-\\d{2}$/.test(d)) return new Date(d).getTime();
-      const parts = d.split('/');
-      if(parts.length===3){ const [mm,dd,yy]=parts; return new Date(\`\${yy}-\${mm.padStart(2,'0')}-\${dd.padStart(2,'0')}\`).getTime(); }
-      const t = Date.parse(d); return isNaN(t) ? 0 : t;
-    };
+      if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return new Date(d).getTime();
+      var parts = d.split('/');
+      if(parts.length===3){ var mm=parts[0], dd=parts[1], yy=parts[2]; return new Date(yy+'-'+mm.padStart(2,'0')+'-'+dd.padStart(2,'0')).getTime(); }
+      var t = Date.parse(d); return isNaN(t)?0:t;
+    }
 
-    function getVisible() {
-      const term = state.search.trim().toLowerCase();
-      let arr = state.projects.filter(p => {
-        const matches = (state.fStatus==='All' || p.status===state.fStatus) &&
-                        (state.fUnit==='All' || p.unit===state.fUnit) &&
-                        (state.fCat==='All' || p.category===state.fCat);
+    function getVisible(){
+      var term = state.search.trim().toLowerCase();
+      var arr = state.projects.filter(function(p){
+        var matches = (state.fStatus==='All' || p.status===state.fStatus) &&
+                      (state.fUnit==='All' || p.unit===state.fUnit) &&
+                      (state.fCat==='All' || p.category===state.fCat);
         if(!matches) return false;
         if(!term) return true;
-        const hay = [p.title,p.owner,p.unit,p.category,p.description,p.collaboration?'collaboration':'' ,...(p.collaborationNeeds||[])].join(' ').toLowerCase();
-        return hay.includes(term);
+        var hay = [p.title,p.owner,p.unit,p.category,p.description,p.collaboration?'collaboration':''].concat(p.collaborationNeeds||[]).join(' ').toLowerCase();
+        return hay.indexOf(term) !== -1;
       });
       switch(state.sort){
-        case 'status': arr.sort((a,b)=> (statusOrder[a.status]-statusOrder[b.status]) || (parseDate(a.start)-parseDate(b.start))); break;
-        case 'startDate': arr.sort((a,b)=> parseDate(a.start)-parseDate(b.start)); break;
-        case 'endDate': arr.sort((a,b)=> parseDate(a.end)-parseDate(b.end)); break;
-        case 'owner': arr.sort((a,b)=> a.owner.localeCompare(b.owner)); break;
-        case 'title': arr.sort((a,b)=> a.title.localeCompare(b.title)); break;
-        case 'unit': arr.sort((a,b)=> a.unit.localeCompare(b.unit)); break;
-        case 'category': arr.sort((a,b)=> a.category.localeCompare(b.category)); break;
+        case 'status': 
+          var order = { 'Active':0,'Planned':1,'Complete':2 };
+          arr.sort(function(a,b){ return (order[a.status]-order[b.status]) || (parseDate(a.start)-parseDate(b.start)); });
+          break;
+        case 'startDate': arr.sort(function(a,b){ return parseDate(a.start)-parseDate(b.start); }); break;
+        case 'endDate': arr.sort(function(a,b){ return parseDate(a.end)-parseDate(b.end); }); break;
+        case 'owner': arr.sort(function(a,b){ return a.owner.localeCompare(b.owner); }); break;
+        case 'title': arr.sort(function(a,b){ return a.title.localeCompare(b.title); }); break;
+        case 'unit': arr.sort(function(a,b){ return a.unit.localeCompare(b.unit); }); break;
+        case 'category': arr.sort(function(a,b){ return a.category.localeCompare(b.category); }); break;
       }
       return arr;
     }
 
     function render(){
-      const content = qs('#content');
-      const items = getVisible();
-      content.innerHTML = '';
-
       if(state.view==='grid'){
-        const wrap = document.createElement('div');
-        wrap.className = 'cards';
-        items.forEach((p, idx) => wrap.appendChild(card(p, idx)));
-        content.appendChild(wrap);
+        content.innerHTML = '<div class="cards" id="cards-dynamic"></div>';
+        var mount = document.getElementById('cards-dynamic');
+        getVisible().forEach(function(p, idx){ mount.appendChild(card(p, idx)); });
       } else {
-        content.appendChild(table(items));
+        content.innerHTML = '';
+        content.appendChild(table(getVisible()));
       }
     }
 
     function card(p, idx){
-      const c = document.createElement('div');
+      var c = document.createElement('div');
       c.className = 'card';
-      const statusClass = p.status==='Active'?'active':(p.status==='Planned'?'planned':'complete');
-      c.innerHTML = `
-        <div class="card-top">
-          <div>
-            <h3>${p.title}</h3>
-            <p class="muted">${p.owner}</p>
-            <p class="muted">${p.unit}</p>
-            <p class="muted"><strong>Category:</strong> ${p.category}</p>
-            <p class="muted"><strong>Start:</strong> ${p.start}</p>
-            <p class="muted"><strong>End:</strong> ${p.end}</p>
-            <span class="badge ${statusClass}">${p.status}</span>
-            ${p.collaboration ? '<p class="warn">⚠ Needs Collaboration Support</p>' : ''}
-          </div>
-          <button class="expand">${state.expanded[idx] ? '▲ Hide details' : '▼ More details'}</button>
-        </div>
-      `;
-      c.querySelector('.expand').addEventListener('click', ()=>{
+      var statusClass = p.status==='Active'?'active':(p.status==='Planned'?'planned':'complete');
+      c.innerHTML = [
+        '<div class="card-top">',
+          '<div>',
+            '<h3>'+escapeHtml(p.title)+'</h3>',
+            '<p class="muted">'+escapeHtml(p.owner)+'</p>',
+            '<p class="muted">'+escapeHtml(p.unit)+'</p>',
+            '<p class="muted"><strong>Category:</strong> '+escapeHtml(p.category)+'</p>',
+            '<p class="muted"><strong>Start:</strong> '+escapeHtml(p.start)+'</p>',
+            '<p class="muted"><strong>End:</strong> '+escapeHtml(p.end)+'</p>',
+            '<span class="badge '+statusClass+'">'+escapeHtml(p.status)+'</span>',
+            (p.collaboration ? '<p class="warn">⚠ Needs Collaboration Support</p>' : ''),
+          '</div>',
+          '<button class="expand">'+(state.expanded[idx] ? '▲ Hide details' : '▼ More details')+'</button>',
+        '</div>'
+      ].join('');
+      c.querySelector('.expand').addEventListener('click', function(){
         state.expanded[idx] = !state.expanded[idx];
         render();
       });
       if(state.expanded[idx]){
-        const d = document.createElement('div');
+        var d = document.createElement('div');
         d.className = 'details';
-        d.innerHTML = `
-          <p>${p.description || ''}</p>
-          ${ (p.collaborationNeeds && p.collaborationNeeds.length) ? `
-            <div>
-              <p class="muted" style="font-size:12px; margin:8px 0 6px;">Collaboration needs</p>
-              <div class="chips">
-                ${p.collaborationNeeds.map(c=>`<span class="chip">${c}</span>`).join('')}
-              </div>
-            </div>` : ''}
-          <div class="actions">
-            <a class="btn primary" href="mailto:${p.ownerEmail}?subject=${encodeURIComponent('Collaboration support for '+p.title)}&body=${encodeURIComponent('Hi, can we connect on this project? Here are the collaboration needs: ')}">✉ Email Owner for Collaboration</a>
-            <button class="copy">Copy Owner Email</button>
-          </div>
-        `;
-        d.querySelector('.copy').addEventListener('click', ()=>{
-          if(navigator.clipboard){ navigator.clipboard.writeText(p.ownerEmail); }
+        d.innerHTML = [
+          '<p>'+escapeHtml(p.description || '')+'</p>',
+          (p.collaborationNeeds && p.collaborationNeeds.length ? (
+            '<div><p class="muted" style="font-size:12px; margin:8px 0 6px;">Collaboration needs</p><div class="chips">'+
+            p.collaborationNeeds.map(function(x){ return '<span class="chip">'+escapeHtml(x)+'</span>'; }).join('')+
+            '</div></div>'
+          ) : ''),
+          '<div class="actions">',
+            '<a class="btn primary" href="mailto:'+encodeURIComponent(p.ownerEmail)+'?subject='+encodeURIComponent('Collaboration support for '+p.title)+'&body='+encodeURIComponent('Hi, can we connect on this project? Here are the collaboration needs: ')+'">✉ Email Owner for Collaboration</a>',
+            '<button class="copy">Copy Owner Email</button>',
+          '</div>'
+        ].join('');
+        d.querySelector('.copy').addEventListener('click', function(){
+          if(navigator.clipboard) navigator.clipboard.writeText(p.ownerEmail);
         });
         c.appendChild(d);
       }
@@ -252,63 +254,88 @@
     }
 
     function table(items){
-      const wrap = document.createElement('div');
+      var wrap = document.createElement('div');
       wrap.className = 'table';
-      const tbl = document.createElement('table');
-      tbl.innerHTML = `
-        <thead>
-          <tr>
-            <th>Project Title</th><th>Owner(s)</th><th>Business Unit</th><th>Category</th>
-            <th>Start Date</th><th>End Date</th><th>Status</th><th>Collaboration</th><th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items.map((p, idx)=>`
-            <tr>
-              <td>${p.title}</td><td>${p.owner}</td><td>${p.unit}</td><td>${p.category}</td>
-              <td>${p.start}</td><td>${p.end}</td><td>${p.status}</td><td>${p.collaboration?'⚠ Yes':'No'}</td>
-              <td><button class="expand" data-idx="${idx}">${state.expanded['t'+idx] ? '▲ Hide details' : '▼ More details'}</button></td>
-            </tr>
-            ${state.expanded['t'+idx] ? `
-              <tr style="background:#f9fafb">
-                <td colspan="9">
-                  <div class="details" style="border-top:none; margin-top:0;">
-                    <p>${p.description || ''}</p>
-                    ${(p.collaborationNeeds && p.collaborationNeeds.length) ? `
-                      <div>
-                        <p class="muted" style="font-size:12px; margin:8px 0 6px;">Collaboration needs</p>
-                        <div class="chips">${p.collaborationNeeds.map(c=>`<span class="chip">${c}</span>`).join('')}</div>
-                      </div>`: ''}
-                    <div class="actions" style="margin-top:8px;">
-                      <a class="btn primary" href="mailto:${p.ownerEmail}?subject=${encodeURIComponent('Collaboration support for '+p.title)}&body=${encodeURIComponent('Hi, can we connect on this project? Here are the collaboration needs: ')}">✉ Email Owner</a>
-                      <button class="copy" data-email="${p.ownerEmail}">Copy Owner Email</button>
-                    </div>
-                  </div>
-                </td>
-              </tr>` : ''}
-          `).join('')}
-        </tbody>
-      `;
-      wrap.appendChild(tbl);
-      wrap.querySelectorAll('button.expand').forEach(btn=>{
-        btn.addEventListener('click', e=>{
-          const idx = e.currentTarget.getAttribute('data-idx');
+      var tbl = document.createElement('table');
+      var thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Project Title</th><th>Owner(s)</th><th>Business Unit</th><th>Category</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Collaboration</th><th>Details</th></tr>';
+      tbl.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      items.forEach(function(p, idx){
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+escapeHtml(p.title)+'</td><td>'+escapeHtml(p.owner)+'</td><td>'+escapeHtml(p.unit)+'</td><td>'+escapeHtml(p.category)+'</td><td>'+escapeHtml(p.start)+'</td><td>'+escapeHtml(p.end)+'</td><td>'+escapeHtml(p.status)+'</td><td>'+(p.collaboration?'⚠ Yes':'No')+'</td><td><button class="expand">'+(state.expanded['t'+idx] ? '▲ Hide details' : '▼ More details')+'</button></td>';
+        tbody.appendChild(tr);
+        if(state.expanded['t'+idx]){
+          var tr2 = document.createElement('tr');
+          tr2.style.background = '#f9fafb';
+          var td = document.createElement('td');
+          td.colSpan = 9;
+          td.innerHTML = [
+            '<div class="details" style="border-top:none; margin-top:0;">',
+              '<p>'+escapeHtml(p.description || '')+'</p>',
+              (p.collaborationNeeds && p.collaborationNeeds.length ? (
+                '<div><p class="muted" style="font-size:12px; margin:8px 0 6px;">Collaboration needs</p><div class="chips">'+
+                p.collaborationNeeds.map(function(x){ return '<span class="chip">'+escapeHtml(x)+'</span>'; }).join('')+
+                '</div></div>'
+              ) : ''),
+              '<div class="actions" style="margin-top:8px;">',
+                '<a class="btn primary" href="mailto:'+encodeURIComponent(p.ownerEmail)+'?subject='+encodeURIComponent('Collaboration support for '+p.title)+'&body='+encodeURIComponent('Hi, can we connect on this project? Here are the collaboration needs: ')+'">✉ Email Owner</a>',
+                '<button class="copy" data-email="'+escapeHtml(p.ownerEmail)+'">Copy Owner Email</button>',
+              '</div>',
+            '</div>'
+          ].join('');
+          tr2.appendChild(td);
+          tbody.appendChild(tr2);
+        }
+        tr.querySelector('.expand').addEventListener('click', function(){
           state.expanded['t'+idx] = !state.expanded['t'+idx];
           render();
         });
       });
-      wrap.querySelectorAll('button.copy').forEach(btn=>{
-        btn.addEventListener('click', e=>{
-          const email = e.currentTarget.getAttribute('data-email');
-          if(navigator.clipboard){ navigator.clipboard.writeText(email); }
+      tbl.appendChild(tbody);
+      wrap.appendChild(tbl);
+      wrap.querySelectorAll('.copy').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          var email = e.currentTarget.getAttribute('data-email');
+          if(navigator.clipboard) navigator.clipboard.writeText(email);
         });
       });
       return wrap;
     }
 
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
+
+    // Controls wiring
+    document.getElementById('search').addEventListener('input', function(e){ state.search = e.target.value; render(); });
+    document.getElementById('f-status').addEventListener('change', function(e){ state.fStatus = e.target.value; render(); });
+    document.getElementById('f-unit').addEventListener('change', function(e){ state.fUnit = e.target.value; render(); });
+    document.getElementById('f-cat').addEventListener('change', function(e){ state.fCat = e.target.value; render(); });
+    document.getElementById('sort').addEventListener('change', function(e){ state.sort = e.target.value; render(); });
+    document.getElementById('view-grid').addEventListener('click', function(){ state.view='grid'; this.classList.add('active'); document.getElementById('view-list').classList.remove('active'); render(); });
+    document.getElementById('view-list').addEventListener('click', function(){ state.view='list'; this.classList.add('active'); document.getElementById('view-grid').classList.remove('active'); render(); });
+
+    // Intake
+    btnToggleIntake.addEventListener('click', function(){
+      var isHidden = intake.classList.contains('hidden');
+      intake.classList.toggle('hidden');
+      btnToggleIntake.textContent = isHidden ? 'Close Intake Form' : '+ Add Project';
+      if(isHidden) clearIntake();
+    });
+    document.getElementById('i-submit').addEventListener('click', function(){
+      addFromIntake();
+      intake.classList.add('hidden');
+      btnToggleIntake.textContent = '+ Add Project';
+      clearIntake();
+    });
+    document.getElementById('i-cancel').addEventListener('click', function(){
+      intake.classList.add('hidden');
+      btnToggleIntake.textContent = '+ Add Project';
+      clearIntake();
+    });
+
     function clearIntake(){
-      ['i-title','i-owner','i-email','i-unit','i-start','i-end','i-status','i-category','i-tags','i-tools','i-desc','i-collab','i-collabtoggle'].forEach(id=>{
-        const el = qs('#'+id);
+      ['i-title','i-owner','i-email','i-unit','i-start','i-end','i-status','i-category','i-tags','i-tools','i-desc','i-collab','i-collabtoggle'].forEach(function(id){
+        var el = document.getElementById(id);
         if(!el) return;
         if(el.type==='checkbox') el.checked = false;
         else if(el.tagName==='SELECT') el.selectedIndex = 0;
@@ -317,48 +344,25 @@
     }
 
     function addFromIntake(){
-      const title = qs('#i-title').value || 'Untitled Project';
-      const owner = qs('#i-owner').value || 'TBD';
-      const ownerEmail = qs('#i-email').value || '';
-      const unit = qs('#i-unit').value || 'TBD';
-      const start = qs('#i-start').value || new Date().toLocaleDateString();
-      const end = qs('#i-end').value || '';
-      const status = qs('#i-status').value;
-      const category = qs('#i-category').value;
-      const description = qs('#i-desc').value || '';
-      const collabNeeds = (qs('#i-collab').value || '').split(',').map(s=>s.trim()).filter(Boolean);
-      const collaboration = qs('#i-collabtoggle').checked;
+      var title = document.getElementById('i-title').value || 'Untitled Project';
+      var owner = document.getElementById('i-owner').value || 'TBD';
+      var ownerEmail = document.getElementById('i-email').value || '';
+      var unit = document.getElementById('i-unit').value || 'TBD';
+      var start = document.getElementById('i-start').value || new Date().toLocaleDateString();
+      var end = document.getElementById('i-end').value || '';
+      var status = document.getElementById('i-status').value;
+      var category = document.getElementById('i-category').value;
+      var description = document.getElementById('i-desc').value || '';
+      var collabNeeds = (document.getElementById('i-collab').value || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      var collaboration = document.getElementById('i-collabtoggle').checked;
       state.projects.push({ title, owner, ownerEmail, unit, start, end, status, category, collaboration, collaborationNeeds: collabNeeds, description });
       render();
+      if(state.view==='grid'){ window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' }); }
     }
 
-    // Wiring
-    qs('#toggle-intake').addEventListener('click', ()=>{
-      const el = qs('#intake');
-      const isOpen = el.style.display !== 'none';
-      el.style.display = isOpen ? 'none' : 'block';
-      if(!isOpen) clearIntake();
-      qs('#toggle-intake').textContent = isOpen ? '+ Add Project' : 'Close Intake Form';
-    });
-    qs('#i-submit').addEventListener('click', ()=>{
-      addFromIntake();
-      qs('#intake').style.display='none';
-      qs('#toggle-intake').textContent = '+ Add Project';
-      clearIntake();
-    });
-    qs('#i-cancel').addEventListener('click', ()=>{
-      qs('#intake').style.display='none';
-      qs('#toggle-intake').textContent = '+ Add Project';
-      clearIntake();
-    });
-    qs('#search').addEventListener('input', e=>{ state.search = e.target.value; render(); });
-    qs('#f-status').addEventListener('change', e=>{ state.fStatus = e.target.value; render(); });
-    qs('#f-unit').addEventListener('change', e=>{ state.fUnit = e.target.value; render(); });
-    qs('#f-cat').addEventListener('change', e=>{ state.fCat = e.target.value; render(); });
-    qs('#sort').addEventListener('change', e=>{ state.sort = e.target.value; render(); });
-    document.getElementById('view-grid').addEventListener('click', ()=>{ state.view='grid'; document.getElementById('view-grid').classList.add('active'); document.getElementById('view-list').classList.remove('active'); render(); });
-    document.getElementById('view-list').addEventListener('click', ()=>{ state.view='list'; document.getElementById('view-list').classList.add('active'); document.getElementById('view-grid').classList.remove('active'); render(); });
+    // Initial render
     render();
+  })();
   </script>
 </body>
 </html>
